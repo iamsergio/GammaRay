@@ -41,7 +41,7 @@ class QQmlBinding;
 
 namespace GammaRay {
 
-struct BindingNode;
+class BindingNode;
 class AbstractBindingProvider;
 
 class GAMMARAY_CORE_EXPORT BindingModel : public QAbstractItemModel
@@ -63,7 +63,7 @@ public:
     QMap<int, QVariant> itemData(const QModelIndex &index) const override;
     Qt::ItemFlags flags(const QModelIndex & index) const override;
 
-    static GAMMARAY_CORE_EXPORT void registerBindingProvider(std::unique_ptr<AbstractBindingProvider> provider);
+    static void registerBindingProvider(std::unique_ptr<AbstractBindingProvider> provider);
 
 private slots:
     void propertyChanged();

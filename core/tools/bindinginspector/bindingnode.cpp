@@ -40,6 +40,8 @@ BindingNode::BindingNode(QObject *obj, int propIndex, BindingNode *parent)
     : m_parent(parent)
     , m_object(obj)
     , m_propertyIndex(propIndex)
+    , m_isActive(true)
+    , m_isBindingLoop(false)
 {
     Q_ASSERT(obj);
     m_canonicalName
@@ -60,8 +62,8 @@ BindingNode::BindingNode(const BindingNode &other)
     , m_sourceLocation(other.m_sourceLocation)
 {
     m_dependencies.reserve(other.m_dependencies.size());
-    for (auto &&dependency : other.m_dependencies) {
-        m_dependencies.push_back(std::unique_ptr<BindingNode>(new BindingNode(*dependency)));
+    for (auto depIt = other.m_dependencies.cbegin(); depIt != other.m_dependencies.cend(); ++depIt) {
+        m_dependencies.push_back(std::unique_ptr<BindingNode>(new BindingNode(**depIt)));
     }
 }
 
@@ -178,10 +180,10 @@ uint BindingNode::depth() const
     if (m_isBindingLoop) {
         return std::numeric_limits<uint>::max(); // to be considered as infinity.
     }
-    for (const auto &dependency : m_dependencies) {
-        if (!dependency->m_isActive)
+    for (auto depIt = m_dependencies.cbegin(); depIt != m_dependencies.cend(); ++depIt) {
+        if (!(*depIt)->m_isActive)
             continue;
-        uint depDepth = dependency->depth();
+        uint depDepth = (*depIt)->depth();
         if (depDepth == std::numeric_limits<uint>::max()) {
             depth = depDepth;
             break;

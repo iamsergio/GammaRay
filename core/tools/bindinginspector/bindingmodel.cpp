@@ -33,9 +33,6 @@
 #include <core/util.h>
 
 #include <QDebug>
-#include <private/qobject_p.h>
-#include <qobject.h>
-
 #include <QMetaProperty>
 
 using namespace GammaRay;
@@ -64,7 +61,8 @@ bool BindingModel::setObject(QObject* obj)
 
     bool typeMatches = false;
     m_bindings.clear();
-    for (auto &&provider: s_providers) {
+    for (auto providerIt = s_providers.begin(); providerIt != s_providers.cend(); ++providerIt) {
+        auto &&provider = *providerIt;
         if (!provider->canProvideBindingsFor(obj))
             continue;
         else
@@ -76,8 +74,8 @@ bool BindingModel::setObject(QObject* obj)
             disconnect(m_obj, nullptr, this, nullptr);
 
         auto newBindings = provider->findBindingsFor(obj);
-        for (std::unique_ptr<BindingNode> &nodeUnique : newBindings) {
-            BindingNode *node = nodeUnique.get();
+        for (auto nodeIt = newBindings.begin(); nodeIt != newBindings.end(); ++nodeIt) {
+            BindingNode *node = nodeIt->get();
             if (findEquivalent(m_bindings, node).isValid()) {
                 continue; // apparantly this is a duplicate.
             }
@@ -87,7 +85,7 @@ bool BindingModel::setObject(QObject* obj)
                 QMetaObject::connect(obj, signalIndex, this, metaObject()->indexOfMethod("propertyChanged()"), Qt::UniqueConnection);
             }
             findDependenciesFor(node);
-            m_bindings.push_back(std::move(nodeUnique));
+            m_bindings.push_back(std::move(*nodeIt));
         }
 
         endResetModel();
@@ -122,10 +120,12 @@ void BindingModel::findDependenciesFor(BindingNode* node)
 {
     if (node->isBindingLoop())
         return;
-    for (auto &&provider : s_providers) {
-        for (auto &&dependency : provider->findDependenciesFor(node)) {
-            findDependenciesFor(dependency.get());
-            node->dependencies().push_back(std::move(dependency));
+    for (auto providerIt = s_providers.cbegin(); providerIt != s_providers.cend(); ++providerIt) {
+        auto &&provider = *providerIt;
+        auto dependencies = provider->findDependenciesFor(node);
+        for (auto dependencyIt = dependencies.begin(); dependencyIt != dependencies.end(); ++dependencyIt) {
+            findDependenciesFor(dependencyIt->get());
+            node->dependencies().push_back(std::move(*dependencyIt));
         }
     }
     std::sort(node->dependencies().begin(), node->dependencies().end(), &BindingModel::lessThan);
@@ -142,8 +142,8 @@ void BindingModel::refresh(BindingNode *bindingNode, const QModelIndex &index)
     // Refresh dependencies
     auto &oldDependencies = bindingNode->dependencies();
     std::vector<std::unique_ptr<BindingNode>> newDependencies;
-    for (auto &&provider : s_providers) {
-        auto deps = provider->findDependenciesFor(bindingNode);
+    for (auto providerIt = s_providers.begin(); providerIt != s_providers.cend(); ++providerIt) {
+        auto deps = (*providerIt)->findDependenciesFor(bindingNode);
         newDependencies.insert(newDependencies.end(), std::make_move_iterator(deps.begin()), std::make_move_iterator(deps.end()));
     }
     std::sort(newDependencies.begin(), newDependencies.end(), &BindingModel::lessThan);

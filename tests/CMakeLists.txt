@@ -413,7 +413,7 @@ if(Qt5Core_FOUND AND NOT Qt5Core_VERSION_MINOR LESS 4) # requires QHooks
         target_link_libraries(qmlsupporttest gammaray_core Qt5::Quick)
     endif()
 
-    if(Qt5Quick_FOUND)
+    if(Qt5Quick_FOUND AND NOT Qt5Qml_VERSION VERSION_LESS 5.10)
         gammaray_add_probe_test(bindinginspectortest
             bindinginspectortest.cpp
             ${CMAKE_SOURCE_DIR}/plugins/qmlsupport/qmlbindingprovider.cpp

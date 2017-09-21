@@ -34,24 +34,13 @@
 
 #include <QDebug>
 #include <private/qobject_p.h>
+#include <qobject.h>
 
 #include <QMetaProperty>
 
 using namespace GammaRay;
 
 std::vector<std::unique_ptr<AbstractBindingProvider>> BindingModel::s_providers;
-
-//connect to a functor
-template <typename Func>
-static inline typename std::enable_if<QtPrivate::FunctionPointer<Func>::ArgumentCount == -1, QMetaObject::Connection>::type
-        connect(const QObject *sender, int signalIndex, Func slot,
-                Qt::ConnectionType type = Qt::AutoConnection)
-{
-    typedef typename QtPrivate::FunctorReturnType<Func, typename QtPrivate::List<>>::Value SlotReturnType;
-
-    return QObjectPrivate::connect(sender, signalIndex,
-                        new QtPrivate::QFunctorSlotObjectWithNoArgs<Func, SlotReturnType>(std::move(slot)), type);
-}
 
 void GammaRay::BindingModel::registerBindingProvider(std::unique_ptr<AbstractBindingProvider> provider)
 {
@@ -60,7 +49,7 @@ void GammaRay::BindingModel::registerBindingProvider(std::unique_ptr<AbstractBin
 
 BindingModel::BindingModel(QObject* parent)
     : QAbstractItemModel(parent)
-    , m_obj(Q_NULLPTR)
+    , m_obj(nullptr)
 {
 }
 
@@ -84,7 +73,7 @@ bool BindingModel::setObject(QObject* obj)
         // TODO use removerows/insertrows instead of reset here
         beginResetModel();
         if (m_obj)
-            disconnect(m_obj, Q_NULLPTR, this, Q_NULLPTR);
+            disconnect(m_obj, nullptr, this, nullptr);
 
         auto newBindings = provider->findBindingsFor(obj);
         for (std::unique_ptr<BindingNode> &nodeUnique : newBindings) {
@@ -95,9 +84,7 @@ bool BindingModel::setObject(QObject* obj)
             int index = m_bindings.size();
             int signalIndex = node->property().notifySignalIndex();
             if (signalIndex != -1) {
-                ::connect(obj, signalIndex, [this, index, node]() {
-                    refresh(node, createIndex(index, 0, node));
-                }, Qt::UniqueConnection);
+                QMetaObject::connect(obj, signalIndex, this, metaObject()->indexOfMethod("propertyChanged()"), Qt::UniqueConnection);
             }
             findDependenciesFor(node);
             m_bindings.push_back(std::move(nodeUnique));
@@ -108,7 +95,22 @@ bool BindingModel::setObject(QObject* obj)
 //     std::sort(m_bindings.begin(), m_bindings.end(), [](std::unique_ptr<BindingNode>& node1, std::unique_ptr<BindingNode>& node2){
 //         return node1->
 //     });
+    m_obj = obj;
     return typeMatches;
+}
+
+void BindingModel::propertyChanged()
+{
+    Q_ASSERT(sender() == m_obj);
+
+    for (int i = 0; i < m_bindings.size(); ++i) {
+        const auto &bindingNode = m_bindings[i];
+        if (bindingNode->property().notifySignalIndex() == senderSignalIndex()) {
+            refresh(bindingNode.get(), createIndex(i, 0, bindingNode.get()));
+            // There can be more than one property with the same notify signal,
+            // so no break here...
+        }
+    }
 }
 
 bool BindingModel::lessThan(const std::unique_ptr<BindingNode> &a, const std::unique_ptr<BindingNode> &b) {

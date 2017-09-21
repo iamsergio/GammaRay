@@ -48,7 +48,7 @@ class QmlBindingExtension;
 struct GAMMARAY_CORE_EXPORT BindingNode
 {
 public:
-    BindingNode (QObject *object, int propertyIndex, BindingNode *parent = Q_NULLPTR);
+    BindingNode (QObject *object, int propertyIndex, BindingNode *parent = nullptr);
     BindingNode(const BindingNode &other);
     BindingNode(BindingNode &&other);
 

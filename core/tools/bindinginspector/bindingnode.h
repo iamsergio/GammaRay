@@ -89,6 +89,8 @@ private:
     SourceLocation m_sourceLocation;
     std::vector<std::unique_ptr<BindingNode>> m_dependencies;
 
+    BindingNode &operator=(const BindingNode &other);
+
     friend class MockBindingProvider;
 };
 

@@ -49,8 +49,6 @@ class GAMMARAY_CORE_EXPORT BindingNode
 {
 public:
     BindingNode (QObject *object, int propertyIndex, BindingNode *parent = nullptr);
-    BindingNode(const BindingNode &other);
-    BindingNode(BindingNode &&other);
 
     QMetaProperty property() const;
     uint depth() const;
@@ -89,7 +87,7 @@ private:
     SourceLocation m_sourceLocation;
     std::vector<std::unique_ptr<BindingNode>> m_dependencies;
 
-    BindingNode &operator=(const BindingNode &other);
+    BindingNode &operator=(const BindingNode &other); // MSVC 2010-style delete
 
     friend class MockBindingProvider;
 };

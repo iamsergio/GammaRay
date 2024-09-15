@@ -623,16 +623,7 @@ set_package_properties(
     PURPOSE "Validate QML code."
 )
 
-find_package(KF${QtCore_VERSION_MAJOR}SyntaxHighlighting 6.0 NO_MODULE QUIET)
-set_package_properties(
-    KF${QtCore_VERSION_MAJOR}SyntaxHighlighting PROPERTIES
-    TYPE RECOMMENDED
-    URL "https://www.kde.org/"
-    PURPOSE "Syntax highlighting for code editor."
-)
-if(TARGET KF${QtCore_VERSION_MAJOR}::SyntaxHighlighting)
-    set(HAVE_SYNTAX_HIGHLIGHTING TRUE)
-endif()
+set(HAVE_SYNTAX_HIGHLIGHTING FALSE)
 
 #
 # Determine probe ABI

@@ -726,6 +726,9 @@ else()
     set(PROBE_BASENAME "${CMAKE_SHARED_LIBRARY_PREFIX}gammaray_probe")
 endif()
 
+set(CMAKE_INSTALL_PREFIX ${QT_INSTALL_PREFIX})
+message("Installing to Qt directory: ${CMAKE_INSTALL_PREFIX}")
+
 if(GAMMARAY_INSTALL_QT_LAYOUT)
     if(WIN32)
         set(PROBE_INSTALL_DIR ${BIN_INSTALL_DIR})
